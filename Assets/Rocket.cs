@@ -8,6 +8,9 @@ public class Rocket : MonoBehaviour {
     Rigidbody rigidBody;
     AudioSource audioSource;
 
+    [SerializeField] float rcsThrust = 150f;
+    [SerializeField] float mainThrust = 20f;
+
 	// Use this for initialization
 	void Start () {
         rigidBody = GetComponent<Rigidbody>();
@@ -16,32 +19,49 @@ public class Rocket : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        ProcessInput();
-	}
-
-    private void ProcessInput()
-    {
         ManageThrust();
         ManageRotation();
     }
 
+    void OnCollisionEnter(Collision collision)
+    {
+        switch (collision.gameObject.tag)
+        {
+            case "Friendly":
+                print("Friendly");
+                break;
+            case "Finish":
+                print("Finish");
+                break;
+            case "Fuel":
+                print("JUICED UP");
+                break;
+            default:
+                print("U dead bro");
+                break;
+        }
+    }
+
     private void ManageRotation()
     {
+        rigidBody.freezeRotation = true; // manual control of rotation
+        float rotationThisFrame = Time.deltaTime * rcsThrust;
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            transform.Rotate(Vector3.forward);
+            transform.Rotate(Vector3.forward * rotationThisFrame);
         }
         else if (Input.GetKey(KeyCode.RightArrow))
         {
-            transform.Rotate(-Vector3.forward);
+            transform.Rotate(-Vector3.forward * rotationThisFrame);
         }
+        rigidBody.freezeRotation = false; // physics rotation
     }
 
     private void ManageThrust()
     {
         if (Input.GetKey(KeyCode.Space))
         {
-            rigidBody.AddRelativeForce(Vector3.up);
+            rigidBody.AddRelativeForce(Vector3.up * mainThrust);
             if (!audioSource.isPlaying)
             {
                 audioSource.Play();
