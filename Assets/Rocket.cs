@@ -4,16 +4,19 @@ using UnityEngine.SceneManagement;
 public class Rocket : MonoBehaviour
 {
 
+    [SerializeField] float levelLoadDelay = 1f;
+    int sceneCount;
+    int currentSceneIndex;
+
     Rigidbody rigidBody;
     AudioSource audioSource;
 
     enum State { Alive, Dying, Transcending }
     State state = State.Alive;
+    bool collisionsDisabled = false;
 
     [SerializeField] float rcsThrust = 150f;
     [SerializeField] float mainThrust = 1500f;
-
-    [SerializeField] float levelLoadDelay = 1f;
 
     [SerializeField] AudioClip mainEngine;
     [SerializeField] AudioClip success;
@@ -28,6 +31,8 @@ public class Rocket : MonoBehaviour
     {
         rigidBody = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
+        sceneCount = SceneManager.sceneCountInBuildSettings;
+        currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
     }
 
     // Update is called once per frame
@@ -38,11 +43,29 @@ public class Rocket : MonoBehaviour
             RespondToThrustInput();
             RespondToRotateInput();
         }
+        if (Debug.isDebugBuild)
+        {
+            RespondToDebugKeys();
+        }
+    }
+
+    private void RespondToDebugKeys()
+    {
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            LoadNextScene();
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            //first solution makes debug rocket fly through objects
+            //rigidBody.detectCollisions = !rigidBody.detectCollisions;
+            collisionsDisabled = !collisionsDisabled;
+        }
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (state != State.Alive) { return; }
+        if (state != State.Alive || collisionsDisabled) { return; }
 
         switch (collision.gameObject.tag)
         {
@@ -85,7 +108,14 @@ public class Rocket : MonoBehaviour
 
     private void LoadNextScene()
     {
-        SceneManager.LoadScene(1);
+        if (currentSceneIndex < sceneCount - 1)
+        {
+            SceneManager.LoadScene(currentSceneIndex + 1);
+        }
+        else
+        {
+            SceneManager.LoadScene(currentSceneIndex);
+        }
     }
 
     private void RespondToRotateInput()
